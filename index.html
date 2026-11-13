@@ -148,8 +148,8 @@
         .resumen-box { text-align: center; }
         .resumen-list { text-align: left; background: #fdfdfd; border: 1px solid #ddd; padding: 1.5rem; border-radius: 6px; margin: 1.5rem 0; }
         
-        .ranking-container { margin-top: 2rem; text-align: left; }
-        .ranking-item { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #eee; font-size: 0.9rem; }
+        .ranking-container { margin-top: 1rem; text-align: left; }
+        .ranking-item { display: flex; justify-content: space-between; padding: 0.7rem 0; border-bottom: 1px solid #eee; font-size: 0.95rem; }
         
         footer { text-align: center; padding: 1.5rem; background: var(--primary-blue); color: white; margin-top: 3rem; font-size: 0.85rem; }
     </style>
@@ -257,11 +257,11 @@
             </div>
         </div>
 
-        <!-- PANTALLA FINAL Y RANKING -->
+        <!-- PANTALLA DE RESUMEN Y VOTACIÓN -->
         <div class="step-section" id="step-resumen">
             <div class="resumen-box">
                 <h2 class="step-title">¡Tus Diseños Preseleccionados!</h2>
-                <p class="step-desc">Registrá tu voto anónimo para que se sume al ranking general del equipo o compartelo por WhatsApp.</p>
+                <p class="step-desc">Revisa tus favoritos, registra tu voto anónimo o compártelos por WhatsApp.</p>
                 
                 <div class="resumen-list" id="lista-favoritos"></div>
 
@@ -270,15 +270,27 @@
                     <button class="btn" style="background:#25D366;" onclick="enviarWhatsApp()">Enviar por WhatsApp 📱</button>
                 </div>
 
-                <div class="ranking-container">
-                    <h3 style="color: var(--primary-blue); border-bottom: 1px solid #ccc; padding-bottom: 0.3rem;">📊 Ranking General en Vivo (Anónimo)</h3>
+                <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; margin-top: 2rem;">
+                    <button class="btn btn-secondary" onclick="prevStep(5)">⬅ Modificar Mi Selección</button>
+                    <button class="btn" onclick="verRanking()">Ver Ranking General en Vivo 📊 ➔</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- PANTALLA DE RANKING SEPARADA -->
+        <div class="step-section" id="step-ranking">
+            <div class="resumen-box">
+                <h2 class="step-title">📊 Ranking General en Vivo (Anónimo)</h2>
+                <p class="step-desc">Así marcha la votación de la comunidad del Movimiento Sanjosesino para el Desarrollo.</p>
+                
+                <div style="background: #fdfdfd; border: 1px solid #ddd; padding: 1.5rem; border-radius: 6px; margin: 1.5rem 0;">
                     <div id="ranking-list">
-                        <p style="color: #666; font-size: 0.9rem;">Cargando resultados de la comunidad...</p>
+                        <p style="color: #666; font-size: 0.9rem; text-align: center;">Cargando resultados de la comunidad...</p>
                     </div>
                 </div>
 
-                <div style="margin-top: 2rem;">
-                    <button class="btn btn-secondary" onclick="prevStep(5)">⬅ Modificar Mi Selección</button>
+                <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; margin-top: 2rem;">
+                    <button class="btn btn-secondary" onclick="nextStep('resumen')">⬅ Volver a Mis Seleccionados</button>
                 </div>
             </div>
         </div>
@@ -343,7 +355,11 @@
             
             listaContainer.innerHTML = htmlContent;
             nextStep('resumen');
-            cargarRanking(); 
+        }
+
+        function verRanking() {
+            nextStep('ranking');
+            cargarRanking();
         }
 
         async function registrarVotoAnonimo() {
@@ -355,7 +371,6 @@
                     const logoId = card.getAttribute('data-id');
                     const logoRef = db.collection('votos_logos').doc(logoId);
                     
-                    // Transacción segura para leer el voto actual y sumarle 1
                     await db.runTransaction(async (transaction) => {
                         const doc = await transaction.get(logoRef);
                         let currentVotes = 0;
@@ -367,7 +382,7 @@
                 }
                 
                 alert("¡Voto registrado con éxito de forma anónima! Gracias por participar.");
-                cargarRanking();
+                verRanking(); // Los lleva directo a ver el ranking actualizado
             } catch (error) {
                 console.error("Error al registrar voto: ", error);
                 alert("Hubo un error al registrar el voto. Comprueba tu conexión.");
@@ -379,7 +394,7 @@
             try {
                 const snapshot = await db.collection('votos_logos').get();
                 if (snapshot.empty) {
-                    rankingList.innerHTML = "<p>Aún no hay votos registrados. ¡Sé el primero en votar!</p>";
+                    rankingList.innerHTML = "<p style='text-align: center; color: #666;'>Aún no hay votos registrados. ¡Sé el primero en votar!</p>";
                     return;
                 }
                 
@@ -388,7 +403,6 @@
                     votosArray.push({ id: doc.id, votos: doc.data().votos || 0 });
                 });
                 
-                // Ordenamos en JavaScript de mayor a menor (sin requerir índices complejos en la nube)
                 votosArray.sort((a, b) => b.votos - a.votos);
                 
                 let html = "";
@@ -398,7 +412,7 @@
                 rankingList.innerHTML = html;
             } catch (error) {
                 console.error("Error al cargar ranking:", error);
-                rankingList.innerHTML = "<p>No se pudo cargar el ranking en este momento.</p>";
+                rankingList.innerHTML = "<p style='text-align: center; color: #666;'>No se pudo cargar el ranking en este momento.</p>";
             }
         }
 
