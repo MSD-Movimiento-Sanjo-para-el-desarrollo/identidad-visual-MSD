@@ -434,7 +434,6 @@
                         imgTitle = cardElement.querySelector('.card-title').textContent;
                     }
 
-                    // Cada elemento del ranking ahora llama a openModal al hacer clic
                     html += `
                         <div class="ranking-item" onclick="openModal('${imgSrc}', '${imgTitle}', '${item.votos}')">
                             <div style="display: flex; align-items: center; gap: 1rem;">
@@ -470,12 +469,19 @@
 
         function enviarWhatsApp() {
             const selectedCards = document.querySelectorAll('.card.selected');
-            let mensaje = "¡Hola! Esta es mi preselección de logos favoritos para el MSD:%0A";
+            if (selectedCards.length === 0) {
+                alert("No seleccionaste ningún logo.");
+                return;
+            }
+            let mensaje = "¡Hola! Esta es mi preselección de logos favoritos para el MSD:\n";
             selectedCards.forEach((card, index) => {
                 const title = card.querySelector('.card-title').textContent;
-                mensaje += `%0A${index + 1}. ${title}`;
+                mensaje += `\n${index + 1}. ${title}`;
             });
-            window.open(`https://api.whatsapp.com/send?text=${mensaje}`, '_blank');
+            
+            // Usamos wa.me con encodeURIComponent y redirección directa para evitar bloqueos en celulares
+            const url = `https://wa.me/?text=${encodeURIComponent(mensaje)}`;
+            window.location.href = url;
         }
     </script>
 </body>
