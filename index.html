@@ -327,7 +327,6 @@
                 return;
             }
 
-            // Diseño en tarjetas verticales con imágenes grandes y sin categoría
             let htmlContent = "<div style='display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1.2rem;'>";
             selectedCards.forEach(card => {
                 const title = card.querySelector('.card-title').textContent;
@@ -352,37 +351,53 @@
             if (selectedCards.length === 0) return;
 
             try {
-                const batch = db.batch();
-                selectedCards.forEach(card => {
+                for (const card of selectedCards) {
                     const logoId = card.getAttribute('data-id');
                     const logoRef = db.collection('votos_logos').doc(logoId);
-                    batch.set(logoRef, { votos: firebase.firestore.FieldValue.increment(1) }, { merge: true });
-                });
-                await batch.commit();
+                    
+                    // Transacción segura para leer el voto actual y sumarle 1
+                    await db.runTransaction(async (transaction) => {
+                        const doc = await transaction.get(logoRef);
+                        let currentVotes = 0;
+                        if (doc.exists) {
+                            currentVotes = doc.data().votos || 0;
+                        }
+                        transaction.set(logoRef, { votos: currentVotes + 1 }, { merge: true });
+                    });
+                }
+                
                 alert("¡Voto registrado con éxito de forma anónima! Gracias por participar.");
                 cargarRanking();
             } catch (error) {
                 console.error("Error al registrar voto: ", error);
-                alert("Hubo un error al registrar el voto.");
+                alert("Hubo un error al registrar el voto. Comprueba tu conexión.");
             }
         }
 
         async function cargarRanking() {
             const rankingList = document.getElementById('ranking-list');
             try {
-                const snapshot = await db.collection('votos_logos').orderBy('votos', 'desc').get();
+                const snapshot = await db.collection('votos_logos').get();
                 if (snapshot.empty) {
                     rankingList.innerHTML = "<p>Aún no hay votos registrados. ¡Sé el primero en votar!</p>";
                     return;
                 }
                 
-                let html = "";
+                let votosArray = [];
                 snapshot.forEach(doc => {
-                    const data = doc.data();
-                    html += `<div class="ranking-item"><span>🎨 <strong>${doc.id}</strong></span> <span><strong>${data.votos}</strong> votos</span></div>`;
+                    votosArray.push({ id: doc.id, votos: doc.data().votos || 0 });
+                });
+                
+                // Ordenamos en JavaScript de mayor a menor (sin requerir índices complejos en la nube)
+                votosArray.sort((a, b) => b.votos - a.votos);
+                
+                let html = "";
+                votosArray.forEach(item => {
+                    html += `<div class="ranking-item"><span>🎨 <strong>${item.id}</strong></span> <span><strong>${item.votos}</strong> votos</span></div>`;
                 });
                 rankingList.innerHTML = html;
             } catch (error) {
+                console.error("Error al cargar ranking:", error);
                 rankingList.innerHTML = "<p>No se pudo cargar el ranking en este momento.</p>";
             }
         }
