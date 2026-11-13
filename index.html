@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Selección de Identidad Visual - MSD</title>
+    
+    <!-- Importamos Firebase desde CDN -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+    <style>
+        :root {
+            --primary-blue: #1B2A4A;
+            --secondary-green: #1E824C;
+            --light-bg: #F8F9FA;
+            --card-bg: #FFFFFF;
+            --text-color: #333333;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--light-bg);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+        }
+        header {
+            background: linear-gradient(135deg, var(--primary-blue), #0f1a30);
+            color: white;
+            text-align: center;
+            padding: 2rem 1rem;
+        }
+        header h1 {
+            margin: 0 0 0.5rem 0;
+            font-size: 1.8rem;
+        }
+        header p {
+            margin: 0;
+            font-size: 1rem;
+            opacity: 0.85;
+        }
+        .container {
+            max-width: 1100px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        .step-section {
+            display: none;
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+        .step-section.active {
+            display: block;
+        }
+        .step-title {
+            color: var(--primary-blue);
+            font-size: 1.4rem;
+            border-bottom: 2px solid var(--secondary-green);
+            padding-bottom: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .step-desc {
+            color: #666;
+            margin-bottom: 1.5rem;
+            font-size: 0.95rem;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .card {
+            background: var(--card-bg);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            border: 3px solid #eee;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            text-align: center;
+        }
+        .card:hover {
+            border-color: #ccc;
+        }
+        .card.selected {
+            border-color: var(--secondary-green);
+            background-color: #f4fbf5;
+        }
+        .card-img {
+            padding: 1rem;
+            background: white;
+            height: 180px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-bottom: 1px solid #eee;
+        }
+        .card-img img {
+            max-width: 100%;
+            max-height: 160px;
+            object-fit: contain;
+        }
+        .card-info {
+            padding: 1rem;
+        }
+        .card-title {
+            font-weight: bold;
+            color: var(--primary-blue);
+            font-size: 0.95rem;
+            margin-bottom: 0.5rem;
+        }
+        .card-tag {
+            font-size: 0.75rem;
+            color: var(--secondary-green);
+            background: #e8f5e9;
+            padding: 0.2rem 0.5rem;
+            border-radius: 10px;
+            display: inline-block;
+        }
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid #eee;
+            padding-top: 1.5rem;
+        }
+        .btn {
+            background: var(--primary-blue);
+            color: white;
+            border: none;
+            padding: 0.7rem 1.5rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1rem;
+            transition: background 0.2s;
+        }
+        .btn:hover { opacity: 0.9; }
+        .btn-secondary { background: #6c757d; }
+        .btn-success { background: var(--secondary-green); }
+        .step-indicator { font-weight: bold; color: #555; font-size: 0.9rem; }
+        .resumen-box { text-align: center; }
+        .resumen-list { text-align: left; background: #fdfdfd; border: 1px solid #ddd; padding: 1.5rem; border-radius: 6px; margin: 1.5rem 0; }
+        
+        .ranking-container { margin-top: 2rem; text-align: left; }
+        .ranking-item { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #eee; font-size: 0.9rem; }
+        
+        footer { text-align: center; padding: 1.5rem; background: var(--primary-blue); color: white; margin-top: 3rem; font-size: 0.85rem; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>MOVIMIENTO SANJOSESINO PARA EL DESARROLLO (MSD)</h1>
+        <p>Selección Guiada y Votación Anónima de Identidad Visual</p>
+    </header>
+
+    <div class="container">
+
+        <!-- PASO 1: Tipográfica y Cortes Dinámicos -->
+        <div class="step-section active" id="step-1">
+            <h2 class="step-title">Paso 1 de 5: Línea Tipográfica y Cortes Dinámicos</h2>
+            <p class="step-desc">Hacé clic sobre los logos que más te gusten de este estilo para seleccionarlos.</p>
+            <div class="grid">
+                <div class="card" onclick="toggleCard(this)" data-id="MSD_L2"><div class="card-img"><img src="MSD L2.jpg" alt="L2"></div><div class="card-info"><div class="card-title">Tipográfico con Cortes 1</div><span class="card-tag">Tipografía</span></div></div>
+                <div class="card" onclick="toggleCard(this)" data-id="MSD_L5"><div class="card-img"><img src="MSD L5.jpg" alt="L5"></div><div class="card-info"><div class="card-title">Tipográfico con Cortes 2</div><span class="card-tag">Tipografía</span></div></div>
+                <div class="card" onclick="toggleCard(this)" data-id="MSD_L7"><div class="card-img"><img src="MSD L7.jpg" alt="L7"></div><div class="card-info"><div class="card-title">Letra S Verde</div><span class="card-tag">Tipografía</span></div></div>
+                <div class="card" onclick="toggleCard(this)" data-id="MSD_L10"><div class="card-img"><img src="MSD L10.jpg" alt="L10"></div><div class="card-info"><div class="card-title">Letra D Verde Completa</div><span class="card-tag">Tipografía</span></div></div>
+                <div class="card" onclick="toggleCard(this)" data-id="MSD_L13"><div class="card-img"><img src="MSD L13.jpg" alt="L13"></div><div class="card-info"><div class="card-title">Tipográfico con Check Lateral</div><span class="card-tag">Tipografía</span></div></div>
+                <div class="card" onclick="toggleCard(this)" data-id="MSD_L14"><div class="card-img"><img src="MSD L14.jpg" alt="L14"></div><div class="card-info"><div class="card-title">Tipográfico con Check Superior</div><span class="card-tag">Tipografía</span></div></div>
+                <div class="card" onclick="toggleCard(this)" data-id="MSD_L15"><div class="card-img"><img src="MSD L15.jpg" alt="L15"></div><div class="card-info"><div class="card-title">Tipográfico con Check en 'D'</div><span class="card-tag">Tipografía</span></div></div>
+                <div class="card" onclick="toggleCard(this)" data-id="MSD_L27"><div class="card-img"><img src="MSD L27.jpg" alt="L27"></div><div class="card-info"><div class="card-title">Corte Interno en 'S'</div><span class="card-tag">Tipografía</span></div></div>
+                <div class="card" onclick="toggleCard(this)" data-id="MSD_L28"><div class="card-img"><img src="MSD L28.jpg" alt="L28"></div><div class="card-info"><div class="card-title">Bloque 'D' Verde Solido</div><span class="card-tag">Tipografía</span></div></div>
+                <div class="card" onclick="toggleCard(this)" data-id="MSD_L29"><div class="card-img"><img src="MSD L29.jpg" alt="L29"></div><div class="card-info"><div class="card-title">Opción A (Línea curva)</div><span class="card-tag">Tipografía</span></div></div>
+                <div class="card" onclick="toggleCard(this)" data-id="MSD_L30"><div class="card-img"><img src="MSD L30.jpg" alt="L30"></div><div class="card-info"><div class="card-title">Opción B (Bicolor limpio)</div><span class="card-tag">Tipografía</span></div></div>
+            </div>
+            <div class="nav-buttons">
+                <span class="step-indicator">Paso 1 de 5</span>
+                <button class="btn" onclick="nextStep(2)">Continuar ➔</button>
+            </div>
+        </div>
+
+        <!-- PASO 2: Sellos y Marcos Institucionales -->
+        <div class="step-section" id="step-2">
+            <h2 class="step-title">Paso 2 de 5: Sellos y Marcos Institucionales</h2>
+            <p class="step-desc">Opciones contenidas en formas geométricas y escudos cerrados.</p>
+            <div class="grid">
+                <div class="card" onclick="toggleCard(this)" data-id="MSD_L6"><div class="card-img"><img src="MSD L6.jpg" alt="L6"></div><div class="card-info"><div class="card-title">Escudo Hexagonal con Hojas</div><span class="card-tag">Institucional</span></div></div>
+                <div class="card" onclick="toggleCard(this)" data-id="MSD_L9"><div class="card-img"><img src="MSD L9.jpg" alt="L9"></div><div class="card-info"><div class="card-title">Bloque Institucional Verde</div><span class="card-tag">Institucional</span></div></div>
+                <div class="card" onclick="toggleCard(this)" data-id="MSD_L24"><div class="card-img"><img src="MSD L24.jpg" alt="L24"></div><div class="card-info"><div class="card-title">Sello Circular con Entramado</div><span class="card-tag">Institucional</span></div></div>
+                <div class="card" onclick="toggleCard(this)" data-id="MSD_L25"><div class="card-img"><img src="MSD L25.jpg" alt="L25"></div><div class="card-info"><div class="card-title">Marco Cuadrado Redondeado</div><span class="card-tag">Institucional</span></div></div>
+            </div>
+            <div class="nav-buttons">
+                <button class="btn btn-secondary" onclick="prevStep(1)">⬅ Volver</button>
+                <span class="step-indicator">Paso 2 de 5</span>
+                <button class="btn" onclick="nextStep(3)">Continuar ➔</button>
+            </div>
+        </div>
+
+        <!-- PASO 3: Lazos y Entramados Geométricos -->
+        <div class="step-section" id="step-3">
+            <h2 class="step-title">Paso 3 de 5: Lazos y Entramados Geométricos</h2>
+            <p class="step-desc">Símbolos abstractos de unión, cintas y monogramas dinámicos.</p>
+            <div class="grid">
+                <div class="card" onclick="toggleCard(this)" data-id="MSD_L1"><div class="card-img"><img src="MSD L1.jpg" alt="L1"></div><div class="card-info"><div class="card-title">Eslabones Geométricos</div><span class="card-tag">Lazos y Conexión</span></div></div>
+                <div class="card" onclick="toggleCard(this)" data-id="MSD_L3"><div class="card-img"><img src="MSD L3.jpg" alt="L3"></div><div class="card-info"><div class="card-title">Curva Ascendente con Punto</div><span class="card-tag">Lazos y Conexión</span></div></div>
+                <div class="card" onclick="toggleCard(this)" data-id="MSD_L4"><div class="card-img"><img src="MSD L4.jpg" alt="L4"></div><div class="card-info"><div class="card-title">Monograma Doble 'M'</div><span class="card-tag">Lazos y Conexión</span></div></div>
+                <div class="card" onclick="toggleCard(this)" data-id="MSD_L11"><div class="card-img"><img src="MSD L11.jpg" alt="L11"></div><div class="card-info"><div class="card-title">Cintas Onduladas Entrelazadas</div><span class="card-tag">Lazos y Conexión</span></div></div>
+                <div class="card" onclick="toggleCard(this)" data-id="MSD_L12"><div class="card-img"><img src="MSD L12.jpg" alt="L12"></div><div class="card-info"><div class="card-title">Espiral Dinámica Ascendente</div><span class="card-tag">Lazos y Conexión</span></div></div>
+                <div class="card" onclick="toggleCard(this)" data-id="MSD_L16"><div class="card-img"><img src="MSD L16.jpg" alt="L16"></div><div class="card-info"><div class="card-title">Marcos Angulares Entrelazados</div><span class="card-tag">Lazos y Conexión</span></div></div>
+                <div class="card" onclick="toggleCard(this)" data-id="MSD_L17"><div class="card-img"><img src="MSD L17.jpg" alt="L17"></div><div class="card-info"><div class="card-title">Circuito Óvalo Entrelazado</div><span class="card-tag">Lazos y Conexión</span></div></div>
+            </div>
+            <div class="nav-buttons">
+                <button class="btn btn-secondary" onclick="prevStep(2)">⬅ Volver</button>
+                <span class="step-indicator">Paso 3 de 5</span>
+                <button class="btn" onclick="nextStep(4)">Continuar ➔</button>
+            </div>
+        </div>
+
+        <!-- PASO 4: Naturaleza, Campos y Soles -->
+        <div class="step-section" id="step-4">
+            <h2 class="step-title">Paso 4 de 5: Naturaleza, Campos y Soles</h2>
+            <p class="step-desc">Elementos vinculados al arraigo, sol naciente y paisaje rural.</p>
+            <div class="grid">
+                <div class="card" onclick="toggleCard(this)" data-id="MSD_L8"><div class="card-img"><img src="MSD L8.jpg" alt="L8"></div><div class="card-info"><div class="card-title">Techo / Montaña en 'D'</div><span class="card-tag">Naturaleza y Campo</span></div></div>
+                <div class="card" onclick="toggleCard(this)" data-id="MSD_L18"><div class="card-img"><img src="MSD L18.jpg" alt="L18"></div><div class="card-info"><div class="card-title">Escudo Campos y Sol</div><span class="card-tag">Naturaleza y Campo</span></div></div>
+                <div class="card" onclick="toggleCard(this)" data-id="MSD_L22"><div class="card-img"><img src="MSD L22.jpg" alt="L22"></div><div class="card-info"><div class="card-title">Sol Naciente sobre Campos</div><span class="card-tag">Naturaleza y Campo</span></div></div>
+                <div class="card" onclick="toggleCard(this)" data-id="MSD_L23"><div class="card-img"><img src="MSD L23.jpg" alt="L23"></div><div class="card-info"><div class="card-title">Sol con Rayos Dinámicos</div><span class="card-tag">Naturaleza y Campo</span></div></div>
+                <div class="card" onclick="toggleCard(this)" data-id="MSD_L26"><div class="card-img"><img src="MSD L26.jpg" alt="L26"></div><div class="card-info"><div class="card-title">Tipografía con Hoja y Sol</div><span class="card-tag">Naturaleza y Campo</span></div></div>
+            </div>
+            <div class="nav-buttons">
+                <button class="btn btn-secondary" onclick="prevStep(3)">⬅ Volver</button>
+                <span class="step-indicator">Paso 4 de 5</span>
+                <button class="btn" onclick="nextStep(5)">Continuar ➔</button>
+            </div>
+        </div>
+
+        <!-- PASO 5: Factor Humano, Manos y Comunidad -->
+        <div class="step-section" id="step-5">
+            <h2 class="step-title">Paso 5 de 5: Factor Humano, Manos y Comunidad</h2>
+            <p class="step-desc">Isotipos centrados en la protección, brotes de desarrollo y cuidado comunitario.</p>
+            <div class="grid">
+                <div class="card" onclick="toggleCard(this)" data-id="MSD_L19"><div class="card-img"><img src="MSD L19.jpg" alt="L19"></div><div class="card-info"><div class="card-title">Sello Brote y Camino Rural</div><span class="card-tag">Comunidad</span></div></div>
+                <div class="card" onclick="toggleCard(this)" data-id="MSD_L20"><div class="card-img"><img src="MSD L20.jpg" alt="L20"></div><div class="card-info"><div class="card-title">Manos Protectoras y Brote</div><span class="card-tag">Comunidad</span></div></div>
+                <div class="card" onclick="toggleCard(this)" data-id="MSD_L21"><div class="card-img"><img src="MSD L21.jpg" alt="L21"></div><div class="card-info"><div class="card-title">Manos con Brote y Estrella</div><span class="card-tag">Comunidad</span></div></div>
+            </div>
+            <div class="nav-buttons">
+                <button class="btn btn-secondary" onclick="prevStep(4)">⬅ Volver</button>
+                <span class="step-indicator">Paso 5 de 5</span>
+                <button class="btn btn-success" onclick="finalizarSeleccion()">Ver Mis Seleccionados 🏆</button>
+            </div>
+        </div>
+
+        <!-- PANTALLA FINAL Y RANKING -->
+        <div class="step-section" id="step-resumen">
+            <div class="resumen-box">
+                <h2 class="step-title">¡Tus Diseños Preseleccionados!</h2>
+                <p class="step-desc">Registrá tu voto anónimo para que se sume al ranking general del equipo o compartelo por WhatsApp.</p>
+                
+                <div class="resumen-list" id="lista-favoritos"></div>
+
+                <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; margin-bottom: 2rem;">
+                    <button class="btn btn-success" onclick="registrarVotoAnonimo()">Registrar Voto Anónimo en la Nube 🗳️</button>
+                    <button class="btn" style="background:#25D366;" onclick="enviarWhatsApp()">Enviar por WhatsApp 📱</button>
+                </div>
+
+                <div class="ranking-container">
+                    <h3 style="color: var(--primary-blue); border-bottom: 1px solid #ccc; padding-bottom: 0.3rem;">📊 Ranking General en Vivo (Anónimo)</h3>
+                    <div id="ranking-list">
+                        <p style="color: #666; font-size: 0.9rem;">Cargando resultados de la comunidad...</p>
+                    </div>
+                </div>
+
+                <div style="margin-top: 2rem;">
+                    <button class="btn btn-secondary" onclick="prevStep(5)">⬅ Modificar Mi Selección</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <footer>
+        <p>Movimiento Sanjosesino para el Desarrollo (MSD) — San José, Entre Ríos.</p>
+    </footer>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyDbz49wMGHYnfIcCelXoEgAKPP-X-GSyTU",
+            authDomain: "msd-logos.firebaseapp.com",
+            projectId: "msd-logos",
+            storageBucket: "msd-logos.firebasestorage.app",
+            messagingSenderId: "945916275684",
+            appId: "1:945916275684:web:a5c2a9c6e1f3e8d78df5f1"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        function toggleCard(card) {
+            card.classList.toggle('selected');
+        }
+
+        function nextStep(step) {
+            document.querySelectorAll('.step-section').forEach(el => el.classList.remove('active'));
+            document.getElementById('step-' + step).classList.add('active');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function prevStep(step) {
+            document.querySelectorAll('.step-section').forEach(el => el.classList.remove('active'));
+            document.getElementById('step-' + step).classList.add('active');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function finalizarSeleccion() {
+            const selectedCards = document.querySelectorAll('.card.selected');
+            const listaContainer = document.getElementById('lista-favoritos');
+            
+            if (selectedCards.length === 0) {
+                alert("No seleccionaste ningún logo todavía.");
+                prevStep(5);
+                return;
+            }
+
+            let htmlContent = "<ul>";
+            selectedCards.forEach(card => {
+                const title = card.querySelector('.card-title').textContent;
+                const tag = card.querySelector('.card-tag').textContent;
+                htmlContent += `<li><strong>${title}</strong> <span style="color:#1E824C;">(${tag})</span></li>`;
+            });
+            htmlContent += "</ul>";
+            
+            listaContainer.innerHTML = htmlContent;
+            nextStep('resumen');
+            cargarRanking(); 
+        }
+
+        async function registrarVotoAnonimo() {
+            const selectedCards = document.querySelectorAll('.card.selected');
+            if (selectedCards.length === 0) return;
+
+            try {
+                const batch = db.batch();
+                selectedCards.forEach(card => {
+                    const logoId = card.getAttribute('data-id');
+                    const logoRef = db.collection('votos_logos').doc(logoId);
+                    batch.set(logoRef, { votos: firebase.firestore.FieldValue.increment(1) }, { merge: true });
+                });
+                await batch.commit();
+                alert("¡Voto registrado con éxito de forma anónima! Gracias por participar.");
+                cargarRanking();
+            } catch (error) {
+                console.error("Error al registrar voto: ", error);
+                alert("Hubo un error al registrar el voto.");
+            }
+        }
+
+        async function cargarRanking() {
+            const rankingList = document.getElementById('ranking-list');
+            try {
+                const snapshot = await db.collection('votos_logos').orderBy('votos', 'desc').get();
+                if (snapshot.empty) {
+                    rankingList.innerHTML = "<p>Aún no hay votos registrados. ¡Sé el primero en votar!</p>";
+                    return;
+                }
+                
+                let html = "";
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    html += `<div class="ranking-item"><span>🎨 <strong>${doc.id}</strong></span> <span><strong>${data.votos}</strong> votos</span></div>`;
+                });
+                rankingList.innerHTML = html;
+            } catch (error) {
+                rankingList.innerHTML = "<p>No se pudo cargar el ranking en este momento.</p>";
+            }
+        }
+
+        function enviarWhatsApp() {
+            const selectedCards = document.querySelectorAll('.card.selected');
+            let mensaje = "¡Hola! Esta es mi preselección de logos favoritos para el MSD:%0A";
+            selectedCards.forEach((card, index) => {
+                const title = card.querySelector('.card-title').textContent;
+                mensaje += `%0A${index + 1}. ${title}`;
+            });
+            window.open(`https://api.whatsapp.com/send?text=${mensaje}`, '_blank');
+        }
+    </script>
+</body>
+</html>
